@@ -67,6 +67,19 @@ func pamAuthenticate(w io.Writer, uid int, username string, argv []string) AuthR
 		}
 	}
 
+	// Connect to RPC
+	// Call isAuthorized(username, signature)
+	/*
+
+		c, err := ethclient.Dial(opts.RawURL)
+		if err != nil {
+			log.Println("Could not initialize client: %v", err)
+		}
+		ppf, err := examples.NewPingPongFilterer(addr, c)
+		if err != nil {
+			log.Fatalf("Could not watch for events: %v", err)
+		}
+	*/
 	// TODO check signature here
 	return AuthSuccess
 }
