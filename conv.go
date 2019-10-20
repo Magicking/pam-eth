@@ -2,49 +2,32 @@
 
 package main
 
-// Took from https://github.com/AmandaCameron/golang-pam-auth/blob/master/src/darkdna.net/pam/conv.go
-
 /*
 #cgo LDFLAGS: -lpam
 #include <stdlib.h>
+#include <stdio.h>
 #include <security/pam_appl.h>
 
 typedef const struct pam_message** MsgsT;
-typedef struct pam_response** RespsT;
+typedef struct pam_response* RespsT;
 
-typedef struct {
-	MsgsT msgs;
-	RespsT resps;
-	int count;
-} conv_t;
-
-conv_t* init_ct() {
-	conv_t* ct;
-
-	ct = malloc(sizeof(conv_t));
-	ct->count = 0;
-	ct->msgs = NULL;
-	ct->resps = NULL;
-	return ct;
-}
-
-int do_conv(pam_handle_t* pamh, int count, char* _ct) {
+int do_conv(pam_handle_t* pamh, char* msg, RespsT* resp) {
 	int err;
-	conv_t* ct = (conv_t*)_ct;
+	struct pam_message _msg = { .msg_style = PAM_PROMPT_ECHO_ON, .msg = msg };
+	struct pam_message *msgs = &_msg;
 	struct pam_conv* conv;
-	//TODO: Create lists here?
+
 	err = pam_get_item(pamh, PAM_CONV, (const void**)&conv);
 	if(err != PAM_SUCCESS) {
 		return err;
 	}
 
-	return conv->conv(count, NULL, NULL, conv->appdata_ptr);
+	return conv->conv(1, (const MsgsT)&msgs, resp, conv->appdata_ptr);
 }
 */
 import "C"
 
 import (
-	"errors"
 	"fmt"
 	"unsafe"
 )
@@ -73,34 +56,19 @@ type Message struct {
 }
 
 // Conversation passes on the specified messages.
-func Conversation(pamh *C.pam_handle_t, _msgs ...Message) ([]string, error) {
-	if len(_msgs) == 0 {
-		return nil, errors.New("Must pass at least one Message.")
-	}
-
-	//msg := []*C.struct_pam_message{}
-	resp := []*C.struct_pam_response{}
-	conv_tp := unsafe.Pointer(C.init_ct())
-	//	defer C.free(conv_tp)
-	/*
-		for _, _msg := range _msgs {
-			msgStruct := (*C.struct_pam_message)(unsafe.Pointer(&C.struct_pam_message{msg_style: C.int(_msg.Style), msg: C.CString(_msg.Msg)}))
-			defer C.free(unsafe.Pointer(msgStruct.msg))
-
-			msg = append(msg, msgStruct)
-			resp = append(resp, &C.struct_pam_response{})
-		}
-	*/
-	code := C.do_conv(pamh, C.int(len(_msgs)), (*C.char)(conv_tp))
+func Conversation(pamh *C.pam_handle_t, msg string) ([]string, error) {
+	var resp C.RespsT
+	code := C.do_conv(pamh, C.CString(msg), &resp)
 	if code != C.PAM_SUCCESS {
 		return nil, fmt.Errorf("Got non-success from the function: %d", code)
 	}
+	if resp == nil {
+		return nil, fmt.Errorf("Empty response")
+	}
 
 	var ret []string
-	for _, r := range resp {
-		ret = append(ret, C.GoString(r.resp))
-		C.free(unsafe.Pointer(r.resp))
-	}
+	ret = append(ret, C.GoString((*resp).resp))
+	C.free(unsafe.Pointer((*resp).resp))
 
 	return ret, nil
 }

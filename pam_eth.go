@@ -67,6 +67,7 @@ func pamAuthenticate(w io.Writer, uid int, username string, argv []string) AuthR
 		}
 	}
 
+	// TODO check signature here
 	return AuthSuccess
 }
 

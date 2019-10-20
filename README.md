@@ -48,9 +48,9 @@ Usage:
 
 Modify your /etc/pam.d/chfn
 ```
-auth⤇   sufficient⤇     /home/magicking/source/gocode/src/github.com/Magicking/pam-eth/pam_eth.so contract-address=0x000 rpc-endpoint=wss://goerli.e    th.6120.eu/ws
-account⤇sufficient⤇     /home/magicking/source/gocode/src/github.com/Magicking/pam-eth/pam_eth.so contract-address=0x000 rpc-endpoint=wss://goerli.e    th.6120.eu/ws
-session⤇sufficient⤇     /home/magicking/source/gocode/src/github.com/Magicking/pam-eth/pam_eth.so contract-address=0x000 rpc-endpoint=wss://goerli.e    th.6120.eu/ws
+auth⤇   sufficient⤇     /home/magicking/source/gocode/src/github.com/Magicking/pam-eth/pam_eth.so contract-address=0x000 rpc-endpoint=wss://goerli.eth.6120.eu/ws
+account⤇sufficient⤇     /home/magicking/source/gocode/src/github.com/Magicking/pam-eth/pam_eth.so contract-address=0x000 rpc-endpoint=wss://goerli.eth.6120.eu/ws
+session⤇sufficient⤇     /home/magicking/source/gocode/src/github.com/Magicking/pam-eth/pam_eth.so contract-address=0x000 rpc-endpoint=wss://goerli.eth.6120.eu/ws
 ```
 
 And try using the command `chfn`

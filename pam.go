@@ -27,6 +27,7 @@ package main
 // code in here can't be tested because it relies on cgo. :(
 
 import (
+	"log"
 	"os"
 	"unsafe"
 )
@@ -71,7 +72,12 @@ func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char)
 		return C.PAM_USER_UNKNOWN
 	}
 
-	Conversation(pamh, Message{MessageEchoOn, "Test please"})
+	tmp, err := Conversation(pamh, "Timecode+Message to sign\n")
+	if err != nil {
+		log.Println(err)
+		return C.PAM_AUTH_ERR
+	}
+	log.Println("TODO CHECK SIG => ", tmp)
 	r := pamAuthenticate(os.Stderr, uid, C.GoString(cUsername), sliceFromArgv(argc, argv))
 	if r == AuthError {
 		return C.PAM_AUTH_ERR
