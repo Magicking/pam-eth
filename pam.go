@@ -27,6 +27,7 @@ package main
 // code in here can't be tested because it relies on cgo. :(
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"unsafe"
@@ -61,24 +62,38 @@ func sliceFromArgv(argc C.int, argv **C.char) []string {
 
 //export pam_sm_authenticate
 func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
+	pamette, err := initEth(sliceFromArgv(argc, argv))
+	if err != nil {
+		pamLog(err.Error())
+		return C.PAM_AUTH_ERR
+	}
+	// Connect first as it may take some time
 	cUsername := C.get_user(pamh)
 	if cUsername == nil {
 		return C.PAM_USER_UNKNOWN
 	}
 	defer C.free(unsafe.Pointer(cUsername))
 
-	uid := int(C.get_uid(cUsername))
-	if uid < 0 {
+	uId := int(C.get_uid(cUsername))
+	if uId < 0 {
 		return C.PAM_USER_UNKNOWN
 	}
 
-	tmp, err := Conversation(pamh, "Timecode+Message to sign\n")
+	//str, err := pamette.GenerateOTP(machineId, uId)
+	msgToSign, err := pamette.GenerateOTP(nil)
 	if err != nil {
-		log.Println(err)
+		pamLog(err.Error())
+		return C.PAM_AUTH_ERR
+	}
+
+	msg := fmt.Sprintf("%s\n", msgToSign)
+	tmp, err := Conversation(pamh, msg)
+	if err != nil {
+		pamLog(err.Error())
 		return C.PAM_AUTH_ERR
 	}
 	log.Println("TODO CHECK SIG => ", tmp)
-	r := pamAuthenticate(os.Stderr, uid, C.GoString(cUsername), sliceFromArgv(argc, argv))
+	r := pamAuthenticate(os.Stderr, uId, C.GoString(cUsername), pamette)
 	if r == AuthError {
 		return C.PAM_AUTH_ERR
 	}

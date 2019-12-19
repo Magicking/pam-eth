@@ -27,8 +27,12 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"log/syslog"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/ethclient"
+	ens "github.com/wealdtech/go-ens"
 )
 
 // AuthResult is the result of the authentcate function.
@@ -47,39 +51,61 @@ func pamLog(format string, args ...interface{}) {
 		return
 	}
 	l.Warning(fmt.Sprintf(format, args...))
+	log.Printf(format, args...)
 }
 
-func pamAuthenticate(w io.Writer, uid int, username string, argv []string) AuthResult {
-
-	var contractAddressOpt, rpcEndpointOpt string
+func initEth(argv []string) (*PametteCaller, error) {
+	var contractAddress, rpcEndpointOpt, password string
 
 	for _, arg := range argv {
 		opt := strings.Split(arg, "=")
 		switch opt[0] {
 		case "contract-address":
-			contractAddressOpt = opt[1]
-			pamLog("contract address is set to %s", contractAddressOpt)
+			contractAddress = opt[1]
 		case "rpc-endpoint":
 			rpcEndpointOpt = opt[1]
 			pamLog("RPC endpoint set is set to %s", rpcEndpointOpt)
+		case "password":
+			password = opt[1]
 		default:
 			pamLog("unkown option: %s\n", opt[0])
+			return nil, fmt.Errorf("unknown option passed")
 		}
 	}
 
 	// Connect to RPC
-	// Call isAuthorized(username, signature)
-	/*
+	c, err := ethclient.Dial(rpcEndpointOpt)
+	if err != nil {
+		return nil, fmt.Errorf("Could not initialize client: %v", err)
+	}
+	// Resolve ens
+	address, err := ens.Resolve(c, contractAddress)
+	if err != nil {
+		return nil, err
+	}
+	pamLog("%s resolved to %s", contractAddress, address.Hex())
+	ctct, err := NewPametteCaller(address, c)
+	if err != nil {
+		return nil, fmt.Errorf("Could not instanciate Pamette: %v", err)
+	}
 
-		c, err := ethclient.Dial(opts.RawURL)
-		if err != nil {
-			log.Println("Could not initialize client: %v", err)
-		}
+	pamLog("Check with password %v", password)
+	return ctct, nil
+}
+
+func pamAuthenticate(w io.Writer, uid int, username string, pamette *PametteCaller) AuthResult {
+
+	str, err := pamette.GenerateOTP(nil)
+	if err != nil {
+		log.Printf("Could not generate OTP: %v", err)
+		return AuthError
+	}
+	log.Println(str)
+	/*
 		ppf, err := examples.NewPingPongFilterer(addr, c)
 		if err != nil {
 			log.Fatalf("Could not watch for events: %v", err)
-		}
-	*/
+		}*/
 	// TODO check signature here
 	return AuthSuccess
 }
