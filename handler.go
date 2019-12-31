@@ -29,18 +29,37 @@ func NewPametteHandler(pc *PametteCaller, password string) *PametteHandler {
 	}
 }
 
-func (ph *PametteHandler) GetOTP(uid int64, username string) (string, error) {
+func (ph *PametteHandler) GetOTP(uid int64, username string) (string, *big.Int, error) {
 
 	hashToSign, bNum, err := ph.pamette.GenerateOTP(big.NewInt(uid), username, ph.password)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	ph.blockValidity = bNum
-	return common.Bytes2Hex(hashToSign[:]), nil
+	return common.Bytes2Hex(hashToSign[:]), bNum, nil
 }
 
 func (ph *PametteHandler) VerifyAuth(uid int64, username, signature string) (bool, error) {
 	log.Println(uid, username, signature)
-	//ph.pamette.IsAuthorized(username, big.NewInt(uid),
+	// todo check sig length
+	v, r, s := extractSignature(signature)
+	ret, err := ph.pamette.IsAuthorized(big.NewInt(uid), username, ph.password, ph.blockValidity, v, r, s)
+	log.Println("ret", ret)
+	if err != nil {
+		return false, err
+	}
+	if big.NewInt(0).Cmp(ret) != 0 {
+		pamLog(ret.String())
+		return false, err
+	}
 	return true, nil
+}
+
+func extractSignature(signature string) (v uint8, r, s [32]byte) {
+	sig := common.FromHex(signature)
+	v = uint8(sig[64])
+	copy(r[:], sig[0:32])
+	copy(s[:], sig[32:64])
+
+	return v, r, s
 }

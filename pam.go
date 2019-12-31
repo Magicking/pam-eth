@@ -79,13 +79,13 @@ func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char)
 	}
 
 	username := C.GoString(cUsername)
-	token, err := ph.GetOTP(uId, username)
+	token, bNum, err := ph.GetOTP(uId, username)
 	if err != nil {
 		pamLog(err.Error())
 		return C.PAM_AUTH_ERR
 	}
 
-	msg := fmt.Sprintf("Helper link: https://TODO\nSign %s\n", token)
+	msg := fmt.Sprintf("Helper link: http://127.0.0.1:8000#token=%s&b=%v\nSign %s\n", token, bNum, token)
 	tokenSig, err := Conversation(pamh, msg)
 	if err != nil {
 		pamLog(err.Error())

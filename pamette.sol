@@ -7,6 +7,7 @@ contract Pamette {
 
 	constructor() public {
 		owner = msg.sender;
+		setUser(generateUserHash(1000, "magicking", "toto"), msg.sender); // Debugging value
 	}
 
 	function setUser(bytes32 hash, address user) public {
@@ -20,18 +21,17 @@ contract Pamette {
 	}
 
 	function isAuthorized(uint256 userId, string memory userName, string memory sharedPassword, uint256 blockNumber, uint8 v, bytes32 r, bytes32 s) public view
-		returns (bool)
+		returns (uint)
 	{
-		require(block.number - blockNumber <= 5, "Hash time invalid");
+		if (!(block.number - blockNumber <= 5)) return 1; // Timeout, token not valid anymore
 		bytes32 userHash = generateUserHash(userId, userName, sharedPassword);
-		require(AllowedUser[userHash] != address(0), "User inexistant");
+		if (!(AllowedUser[userHash] != address(0))) return 2; // User inexistant
 		bytes32 hashToSign = keccak256(abi.encode(userHash, block.number));
 
-		bytes memory prefix = "\x19Ethereum Signed Message:\n13";
+		bytes memory prefix = "\x19Ethereum Signed Message:\n32";
 		bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hashToSign));
-		require(AllowedUser[userHash] == ecrecover(prefixedHash, v, r, s), "User unpermitted");
-
-		return true;
+		if (!(AllowedUser[userHash] == ecrecover(prefixedHash, v, r, s))) return 3; // User inexistant
+		return 0;
 	}
 
 	function generateUserHash(uint256 userId, string memory userName, string memory sharedPassword) public pure
