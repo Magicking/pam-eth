@@ -56,18 +56,17 @@ type Message struct {
 }
 
 // Conversation passes on the specified messages.
-func Conversation(pamh *C.pam_handle_t, msg string) ([]string, error) {
+func Conversation(pamh *C.pam_handle_t, msg string) (string, error) {
 	var resp C.RespsT
 	code := C.do_conv(pamh, C.CString(msg), &resp)
 	if code != C.PAM_SUCCESS {
-		return nil, fmt.Errorf("Got non-success from the function: %d", code)
+		return "", fmt.Errorf("Got non-success from the function: %d", code)
 	}
 	if resp == nil {
-		return nil, fmt.Errorf("Empty response")
+		return "", fmt.Errorf("Empty response")
 	}
 
-	var ret []string
-	ret = append(ret, C.GoString((*resp).resp))
+	ret := C.GoString((*resp).resp)
 	C.free(unsafe.Pointer((*resp).resp))
 
 	return ret, nil

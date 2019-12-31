@@ -29,7 +29,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 	"unsafe"
 )
 
@@ -62,7 +61,7 @@ func sliceFromArgv(argc C.int, argv **C.char) []string {
 
 //export pam_sm_authenticate
 func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
-	pamette, err := initEth(sliceFromArgv(argc, argv))
+	ph, err := initEth(sliceFromArgv(argc, argv))
 	if err != nil {
 		pamLog(err.Error())
 		return C.PAM_AUTH_ERR
@@ -74,30 +73,35 @@ func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char)
 	}
 	defer C.free(unsafe.Pointer(cUsername))
 
-	uId := int(C.get_uid(cUsername))
+	uId := int64(C.get_uid(cUsername))
 	if uId < 0 {
 		return C.PAM_USER_UNKNOWN
 	}
 
-	//str, err := pamette.GenerateOTP(machineId, uId)
-	msgToSign, err := pamette.GenerateOTP(nil)
+	username := C.GoString(cUsername)
+	token, err := ph.GetOTP(uId, username)
 	if err != nil {
 		pamLog(err.Error())
 		return C.PAM_AUTH_ERR
 	}
 
-	msg := fmt.Sprintf("%s\n", msgToSign)
-	tmp, err := Conversation(pamh, msg)
+	msg := fmt.Sprintf("Helper link: https://TODO\nSign %s\n", token)
+	tokenSig, err := Conversation(pamh, msg)
 	if err != nil {
 		pamLog(err.Error())
 		return C.PAM_AUTH_ERR
 	}
-	log.Println("TODO CHECK SIG => ", tmp)
-	r := pamAuthenticate(os.Stderr, uId, C.GoString(cUsername), pamette)
-	if r == AuthError {
+	log.Println("TODO CHECK SIG => ", tokenSig)
+	ok, err := ph.VerifyAuth(uId, username, tokenSig)
+	if err != nil {
+		pamLog(err.Error())
 		return C.PAM_AUTH_ERR
 	}
-	return C.PAM_SUCCESS
+	if ok {
+		return C.PAM_SUCCESS
+	} else {
+		return C.PAM_USER_UNKNOWN
+	}
 }
 
 //export pam_sm_setcred

@@ -26,7 +26,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"log/syslog"
 	"strings"
@@ -54,7 +53,7 @@ func pamLog(format string, args ...interface{}) {
 	log.Printf(format, args...)
 }
 
-func initEth(argv []string) (*PametteCaller, error) {
+func initEth(argv []string) (*PametteHandler, error) {
 	var contractAddress, rpcEndpointOpt, password string
 
 	for _, arg := range argv {
@@ -89,25 +88,8 @@ func initEth(argv []string) (*PametteCaller, error) {
 		return nil, fmt.Errorf("Could not instanciate Pamette: %v", err)
 	}
 
-	pamLog("Check with password %v", password)
-	return ctct, nil
-}
-
-func pamAuthenticate(w io.Writer, uid int, username string, pamette *PametteCaller) AuthResult {
-
-	str, err := pamette.GenerateOTP(nil)
-	if err != nil {
-		log.Printf("Could not generate OTP: %v", err)
-		return AuthError
-	}
-	log.Println(str)
-	/*
-		ppf, err := examples.NewPingPongFilterer(addr, c)
-		if err != nil {
-			log.Fatalf("Could not watch for events: %v", err)
-		}*/
-	// TODO check signature here
-	return AuthSuccess
+	ph := NewPametteHandler(ctct, password)
+	return ph, nil
 }
 
 func main() {}

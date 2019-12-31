@@ -14,7 +14,7 @@ Building:
 
 1. clone the repo and run 'make'
 ```
-  $ git clone github.com/Magicking/pam-net
+  $ git clone github.com/Magicking/pam-eth
 
   ...
 

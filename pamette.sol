@@ -19,11 +19,11 @@ contract Pamette {
 		}
 	}
 
-	function isAuthorized(string memory userName, uint256 userId, uint256 machineId, bytes32 sharedPassword, uint256 blockNumber, uint8 v, bytes32 r, bytes32 s) public view
+	function isAuthorized(uint256 userId, string memory userName, string memory sharedPassword, uint256 blockNumber, uint8 v, bytes32 r, bytes32 s) public view
 		returns (bool)
 	{
 		require(block.number - blockNumber <= 5, "Hash time invalid");
-		bytes32 userHash = generateUserHash(userName, userId, machineId, sharedPassword);
+		bytes32 userHash = generateUserHash(userId, userName, sharedPassword);
 		require(AllowedUser[userHash] != address(0), "User inexistant");
 		bytes32 hashToSign = keccak256(abi.encode(userHash, block.number));
 
@@ -34,17 +34,17 @@ contract Pamette {
 		return true;
 	}
 
-	function generateUserHash(string memory userName, uint256 userId, uint256 machineId, bytes32 sharedPassword) public pure
+	function generateUserHash(uint256 userId, string memory userName, string memory sharedPassword) public pure
 	    returns (bytes32)
 	{
-		return keccak256(abi.encode(userName, userId, machineId, sharedPassword));
+		return keccak256(abi.encode(userName, userId, sharedPassword));
 	}
 
-	function generateOTP(string memory userName, uint256 userId, uint256 machineId, bytes32 sharedPassword) public view
+	function generateOTP(uint256 userId, string memory userName, string memory sharedPassword) public view
 		returns (bytes32 , uint)
 	{
-		bytes32 userHash = generateUserHash(userName, userId, machineId, sharedPassword);
-		// Contatenate user + machineId + sharedPassword + currentBlockNumber
+		bytes32 userHash = generateUserHash(userId, userName, sharedPassword);
+		// Contatenate user + sharedPassword + currentBlockNumber
 		bytes32 hashToSign = keccak256(abi.encode(userHash, block.number));
 
 		return (hashToSign, block.number);
