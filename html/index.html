@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content=
+  "width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <title>Pamette 2FA</title>
+</head>
+<body ng-app="pamette">
+<div class="container-fluid" ng-controller="cardController">
+	<div class="row">
+		<div class="col-md-4 offset-md-4">
+			<div class="card bg-default">
+				<h5 class="card-header">
+					{{user}} @ {{machineName}}
+				</h5>
+				<div class="card-body">
+					<p class="card-text">
+						<button type="button" class="btn btn-success btn-block" ng-click="signHash()">
+						  {{buttonTxt}}
+						</button>
+						<div class="progress">
+						  <div class="progress-bar {{pgStatus}} progress-bar-animated progress-bar-striped w-{{timeLeft}}">
+							</div>
+						</div>
+					</p>
+				</div>
+				<div class="card-footer">
+				  <textarea class="form-control input-lg" type="text">{{txtStatus}}</textarea>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+  <script src="dist/bundle.js"></script>
+</body>
+</html>
