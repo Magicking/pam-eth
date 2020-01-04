@@ -26,7 +26,7 @@ contract Pamette {
 		if (!(block.number - blockNumber <= 5)) return 1; // Timeout, token not valid anymore
 		bytes32 userHash = generateUserHash(userId, userName, sharedPassword);
 		if (!(AllowedUser[userHash] != address(0))) return 2; // User inexistant
-		bytes32 hashToSign = keccak256(abi.encode(userHash, block.number));
+		bytes32 hashToSign = keccak256(abi.encodePacked(userHash, blockNumber));
 
 		bytes memory prefix = "\x19Ethereum Signed Message:\n32";
 		bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hashToSign));
@@ -37,7 +37,7 @@ contract Pamette {
 	function generateUserHash(uint256 userId, string memory userName, string memory sharedPassword) public pure
 	    returns (bytes32)
 	{
-		return keccak256(abi.encode(userName, userId, sharedPassword));
+		return keccak256(abi.encodePacked(userName, userId, sharedPassword));
 	}
 
 	function generateOTP(uint256 userId, string memory userName, string memory sharedPassword) public view
@@ -45,7 +45,7 @@ contract Pamette {
 	{
 		bytes32 userHash = generateUserHash(userId, userName, sharedPassword);
 		// Contatenate user + sharedPassword + currentBlockNumber
-		bytes32 hashToSign = keccak256(abi.encode(userHash, block.number));
+		bytes32 hashToSign = keccak256(abi.encodePacked(userHash, block.number));
 
 		return (hashToSign, block.number);
 	}
