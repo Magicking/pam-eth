@@ -1,8 +1,9 @@
 MODULE := pam_eth
 
 module: test
-	go build -buildmode=c-shared -a -o ${MODULE}.so
+	go build -v -buildmode=c-shared -a -o ${MODULE}.so
 	-chmod +x ${MODULE}.so
+	-ls -hl ${MODULE}.so
 
 test: *.go
 	go test -cover
