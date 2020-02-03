@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -30,7 +29,6 @@ func NewPametteHandler(pc *PametteCaller, password string) *PametteHandler {
 }
 
 func (ph *PametteHandler) GetOTP(uid int64, username string) (string, *big.Int, error) {
-
 	hashToSign, bNum, err := ph.pamette.GenerateOTP(big.NewInt(uid), username, ph.password)
 	if err != nil {
 		return "", nil, err
@@ -40,11 +38,9 @@ func (ph *PametteHandler) GetOTP(uid int64, username string) (string, *big.Int, 
 }
 
 func (ph *PametteHandler) VerifyAuth(uid int64, username, signature string) (bool, error) {
-	log.Println(uid, username, signature)
-	// todo check sig length
+	//TODO check sig length
 	v, r, s := extractSignature(signature)
 	ret, err := ph.pamette.IsAuthorized(big.NewInt(uid), username, ph.password, ph.blockValidity, v, r, s)
-	log.Println("ret", ret)
 	if err != nil {
 		return false, err
 	}
