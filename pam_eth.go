@@ -1,47 +1,15 @@
 // +build darwin linux
 
-/*
-Copyright (c) 2017 Uber Technologies, Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
-
 package main
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"log/syslog"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	ens "github.com/wealdtech/go-ens"
-)
-
-// AuthResult is the result of the authentcate function.
-type AuthResult int
-
-const (
-	// AuthError is a failure.
-	AuthError AuthResult = iota
-	// AuthSuccess is a success.
-	AuthSuccess
 )
 
 func pamLog(format string, args ...interface{}) {
@@ -50,7 +18,7 @@ func pamLog(format string, args ...interface{}) {
 		return
 	}
 	l.Warning(fmt.Sprintf(format, args...))
-	log.Printf(format, args...)
+	//	log.Printf(format, args...)
 }
 
 func initEth(argv []string) (*PametteHandler, error) {
@@ -63,7 +31,6 @@ func initEth(argv []string) (*PametteHandler, error) {
 			contractAddress = opt[1]
 		case "rpc-endpoint":
 			rpcEndpointOpt = opt[1]
-			pamLog("RPC endpoint set is set to %s", rpcEndpointOpt)
 		case "password":
 			password = opt[1]
 		default:
@@ -73,10 +40,17 @@ func initEth(argv []string) (*PametteHandler, error) {
 	}
 
 	// Connect to RPC
+	pamLog("Connecting to %s", rpcEndpointOpt)
 	c, err := ethclient.Dial(rpcEndpointOpt)
 	if err != nil {
 		return nil, fmt.Errorf("Could not initialize client: %v", err)
 	}
+	pamLog("Resolving ENS %s", contractAddress)
+	netId, err := c.NetworkID(context.TODO())
+	if err != nil {
+		pamLog("NetworkID err %v", err)
+	}
+	pamLog("NetworkID %v", netId)
 	// Resolve ens
 	address, err := ens.Resolve(c, contractAddress)
 	if err != nil {
