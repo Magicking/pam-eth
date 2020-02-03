@@ -32,29 +32,6 @@ import (
 	"unsafe"
 )
 
-// MessageStyle is a style of Message
-type MessageStyle int
-
-const (
-	// MessageEchoOff is for messages that shouldn't gave an echo.
-	MessageEchoOff = MessageStyle(C.PAM_PROMPT_ECHO_OFF)
-
-	// MessageEchoOn is for messages that should have an echo.
-	MessageEchoOn = MessageStyle(C.PAM_PROMPT_ECHO_ON)
-
-	// MessageErrorMsg is for messages that should be displayed as an error.
-	MessageErrorMsg = MessageStyle(C.PAM_ERROR_MSG)
-
-	// MessageTextInfo is for textual blurbs to be spat out.
-	MessageTextInfo = MessageStyle(C.PAM_TEXT_INFO)
-)
-
-// Message represents something to ask / show in a Conv.Conversation call.
-type Message struct {
-	Style MessageStyle
-	Msg   string
-}
-
 // Conversation passes on the specified messages.
 func Conversation(pamh *C.pam_handle_t, msg string) (string, error) {
 	var resp C.RespsT
