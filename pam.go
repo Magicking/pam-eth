@@ -28,7 +28,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"unsafe"
 )
 
@@ -59,14 +58,7 @@ func sliceFromArgv(argc C.int, argv **C.char) []string {
 	return r
 }
 
-//export pam_sm_authenticate
-func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
-	ph, err := initEth(sliceFromArgv(argc, argv))
-	if err != nil {
-		pamLog(err.Error())
-		return C.PAM_AUTH_ERR
-	}
-	// Connect first as it may take some time
+func authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
 	cUsername := C.get_user(pamh)
 	if cUsername == nil {
 		return C.PAM_USER_UNKNOWN
@@ -78,23 +70,29 @@ func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char)
 		return C.PAM_USER_UNKNOWN
 	}
 
+	ph, err := initEth(sliceFromArgv(argc, argv))
+	if err != nil {
+		pamLog("initEth: %v", err)
+		return C.PAM_AUTH_ERR
+	}
 	username := C.GoString(cUsername)
 	token, bNum, err := ph.GetOTP(uId, username)
 	if err != nil {
-		pamLog(err.Error())
+		pamLog("GetOTP: %v", err.Error())
 		return C.PAM_AUTH_ERR
 	}
 
 	msg := fmt.Sprintf("Helper link: http://127.0.0.1:8000#token=%s&b=%v\nSign %s\n", token, bNum, token)
+	pamLog("Helper link: http://127.0.0.1:8000#token=%s&b=%v\nSign %s\n", token, bNum, token)
 	tokenSig, err := Conversation(pamh, msg)
 	if err != nil {
-		pamLog(err.Error())
+		pamLog("Conversation: %v", err.Error())
 		return C.PAM_AUTH_ERR
 	}
-	log.Println("TODO CHECK SIG => ", tokenSig)
+	pamLog("TODO CHECK SIG => %s", tokenSig)
 	ok, err := ph.VerifyAuth(uId, username, tokenSig)
 	if err != nil {
-		pamLog(err.Error())
+		pamLog("VerifyAuth: %v", err.Error())
 		return C.PAM_AUTH_ERR
 	}
 	if ok {
@@ -104,25 +102,40 @@ func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char)
 	}
 }
 
+//export pam_sm_authenticate
+func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
+	// TODO
+	return authenticate(pamh, flags, argc, argv)
+}
+
 //export pam_sm_setcred
 func pam_sm_setcred(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
+
+	return authenticate(pamh, flags, argc, argv)
 	return C.PAM_SUCCESS
 }
 
 //export pam_sm_acct_mgmt
 func pam_sm_acct_mgmt(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
-	//TODO
-	return C.PAM_SUCCESS
+	// TODO
+	return authenticate(pamh, flags, argc, argv)
 }
 
-//export pam_sm_open_session
-func pam_sm_open_session(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
-	//TODO
-	return C.PAM_SUCCESS
-}
+////export pam_sm_open_session
+//func pam_sm_open_session(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
+//	// TODO
+//	return C.PAM_SUCCESS
+//	return authenticate(pamh, flags, argc, argv)
+//}
+//
+////export pam_sm_close_session
+//func pam_sm_close_session(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
+//	// TODO
+//	return C.PAM_SUCCESS
+//}
 
-//export pam_sm_close_session
-func pam_sm_close_session(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
-	//TODO
-	return C.PAM_SUCCESS
-}
+////export pam_sm_chauthok
+//func pam_sm_chauthok(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
+//	// TODO
+//	return C.PAM_SUCCESS
+//}
