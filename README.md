@@ -4,7 +4,6 @@ Do not use this in production.
 
 A pam security module backed by access control smart contract.
 
-![](doc/pamette.png)
 
 Forked from Uber's SSH certificate pam module.
 
